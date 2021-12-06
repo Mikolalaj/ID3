@@ -4,7 +4,12 @@ from copy import deepcopy
 
 
 class DecisionTree:
-    def __init__(self, df: pd.DataFrame, columns_names: list, max_depth: int, number_of_childs: int) -> None:
+    def __init__(self,
+                 df: pd.DataFrame,
+                 columns_names: list,
+                 max_depth: int,
+                 number_of_childs: int,
+                 min_impurity_split: float=None) -> None:
         self.df = df
         self.columns_names = columns_names
         self.number_of_childs = number_of_childs
@@ -18,9 +23,18 @@ class DecisionTree:
             self.result = self.df['target'].unique()
         else:
             if max_depth != 0:
-                ranges = self.create_values_ranges()
-                self.children = {} # value: tree
-                self.create_children(ranges)
+                if min_impurity_split is not None:
+                    self.gini_impurity = get_gini_impurity(self.df, self.best_column_name)
+                    if self.gini_impurity >= min_impurity_split:
+                        ranges = self.create_values_ranges()
+                        self.children = {} # value: tree
+                        self.create_children(ranges)
+                    else:
+                        self.result = self.df['target'].unique()
+                else:
+                    ranges = self.create_values_ranges()
+                    self.children = {} # value: tree
+                    self.create_children(ranges)
             else:
                 self.result = self.df['target'].unique()
         
@@ -45,7 +59,7 @@ class DecisionTree:
             child_df.drop(self.best_column_name, axis=1, inplace=True)
             child_columns = deepcopy(self.columns_names)
             child_columns.remove(self.best_column_name)
-            self.children[range] = DecisionTree(child_df, child_columns, self.max_depth-1)
+            self.children[range] = DecisionTree(child_df, child_columns, self.max_depth, self.number_of_childs)
     
     def create_values_ranges(self) -> list:
         '''
@@ -128,22 +142,16 @@ def calc_gain(df: pd.DataFrame, column_name: str) -> float:
     
     return entropy_all
 
-'''
-def get_split_info(df: pd.DataFrame, column_name: str) -> float:
+def get_gini_impurity(df: pd.DataFrame, column_name: str) -> float:
     available_values = df[column_name].unique()
-    df_len = len(df)
+    all_rows_count = len(df)
     
-    split_info = 0
+    gini_impurity = 0
     for value in available_values:
-        division = len(df[df[column_name] == value])/df_len
-        split_info -= division*log2(division)
-    
-    return split_info
-
-
-def get_gain_ration(df: pd.DataFrame, column_name: str) -> float:
-    return calc_gain(df, column_name)/get_split_info(df, column_name)
-'''
+        rows_count = len(df[df[column_name] == value])
+        gini_impurity += rows_count/all_rows_count*(1-rows_count/all_rows_count)
+        
+    return gini_impurity
 
 if __name__ == '__main__':
 
