@@ -56,15 +56,3 @@ print(f'\nBest hyperparameters:\nmax_depth = {best_tree[1]}\nnumber_of_childs = 
 final_rating = test_dataframe(test, best_tree[0])
 
 print(f'\nBest tree rating: {final_rating}')
-
-'''tree = DecisionTree(
-    df=train,
-    columns_names=datasets.load_iris()['feature_names'],
-    max_depth=2,
-    number_of_childs=2,
-    min_impurity_split=0.3
-)
-
-print(tree)
-print(tree[0])
-print(tree[0][0])'''
